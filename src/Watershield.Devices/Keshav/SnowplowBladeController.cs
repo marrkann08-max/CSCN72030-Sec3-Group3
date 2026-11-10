@@ -10,6 +10,12 @@ public sealed class SnowplowBladeController
 {
     public BladePosition Position { get; private set; } = BladePosition.Up;
 
+    public void LoadScenario(string csvPath) { }
+
+    public BladePosition PollFeedback() => Position;
+
+    public void ResetScenario() { }
+
     public bool TrySetPosition(string? command)
     {
         switch (command)
