@@ -12,6 +12,16 @@ public sealed class SnowplowBladeController
 
     public bool TrySetPosition(string? command)
     {
-        return false;
+        switch (command)
+        {
+            case "UP":
+                Position = BladePosition.Up;
+                return true;
+            case "DOWN":
+                Position = BladePosition.Down;
+                return true;
+            default:
+                return false;
+        }
     }
 }
