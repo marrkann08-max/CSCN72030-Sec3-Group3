@@ -9,3 +9,4 @@ jobs:
         with:
           dotnet-version: '8.0.x'
       - run: dotnet build WATERSHIELD.sln --configuration Release
+      - run: dotnet test WATERSHIELD.sln --configuration Release --no-build
