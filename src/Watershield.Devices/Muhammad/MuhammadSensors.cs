@@ -89,19 +89,16 @@ public sealed class RoadTemperatureSensor : CsvWeatherSensor
             : new() { ["road_temperature"] = new(t, "°C") };
 }
 
-public sealed class SurfaceTemperatureSensor : ISensor
+public sealed class SurfaceTemperatureSensor : CsvWeatherSensor
 {
     public SurfaceTemperatureSensor(string deviceId, string segmentId, string csvPath, TimeProvider? clock = null)
-    {
-        DeviceId = deviceId;
-    }
+        : base(deviceId, segmentId, csvPath, clock) { }
 
-    public string DeviceId { get; }
-    public string Name => "Surface temperature sensor";
-    public DeviceStatus Status => DeviceStatus.Offline;
-    public event Action<DeviceEvent>? EventRaised;
+    public override string Name => "Surface temperature sensor";
+    protected override string[] CsvColumns => ["surface_temperature_c"];
 
-    public void Initialize() { }
-    public TelemetryPacket ReadTelemetry() => throw new NotImplementedException();
-    public void Shutdown() { }
+    protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields) =>
+        fields.Length != 1 || !TryNumber(fields[0], out double t)
+            ? null
+            : new() { ["surface_temperature"] = new(t, "°C") };
 }
