@@ -17,7 +17,7 @@ public sealed class LoopedCsvDataSource
     {
         var row = rows[index];
         index = (index + 1) % rows.Length;
-        return row;
+        return (string[])row.Clone();
     }
     public void Reset() => index = 0;
 }

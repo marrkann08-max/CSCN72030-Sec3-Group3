@@ -16,6 +16,8 @@ public sealed class DispatchController : CsvController<DispatchState>
     {
         ArgumentNullException.ThrowIfNull(knownSegments);
         this.knownSegments = new HashSet<string>(knownSegments, StringComparer.Ordinal);
+        if (this.knownSegments.Count == 0 || this.knownSegments.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("At least one nonblank configured value is required.", nameof(knownSegments));
     }
 
     public override string Name => "Winter operations dispatch";

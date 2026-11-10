@@ -185,6 +185,8 @@ public sealed class VariableWarningSignController : CsvController<SignState>
 
         this.segmentId = segmentId;
         this.presetMessages = new HashSet<string>(presetMessages, StringComparer.Ordinal);
+        if (this.presetMessages.Count == 0 || this.presetMessages.Any(string.IsNullOrWhiteSpace))
+            throw new ArgumentException("At least one nonblank configured value is required.", nameof(presetMessages));
     }
 
     public override string Name => "Variable warning sign";
