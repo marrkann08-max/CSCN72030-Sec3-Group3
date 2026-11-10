@@ -24,4 +24,7 @@
     <ProjectReference Include="..\..\src\Watershield.Devices\Watershield.Devices.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../../data/scenarios/**/*.csv" Link="scenarios/%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
