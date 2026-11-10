@@ -1,6 +1,6 @@
 namespace Watershield.MuhammadTests;
 
-/// <summary>Writes CSV text to a temp file that is deleted when disposed.</summary>
+// little helper so each test gets its own temp csv and cleans it up after
 internal sealed class TestCsv : IDisposable
 {
     public TestCsv(string content)
