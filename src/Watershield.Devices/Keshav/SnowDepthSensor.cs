@@ -5,7 +5,7 @@ namespace Watershield.Devices.Keshav;
 public sealed class SnowDepthSensor
 {
     private string? loadedPath;
-    private string[] readings = [];
+    private List<double> readings = [];
     private int nextReadingIndex;
 
     public double ReadSnowDepthCm(string csvPath)
@@ -14,20 +14,30 @@ public sealed class SnowDepthSensor
 
         if (loadedPath != fullPath)
         {
-            string[] dataRows = File.ReadLines(fullPath).Skip(1).ToArray();
+            var validReadings = new List<double>();
 
-            if (dataRows.Length == 0)
+            foreach (string row in File.ReadLines(fullPath).Skip(1))
             {
-                throw new InvalidDataException("The snow-depth CSV contains no data rows.");
+                if (double.TryParse(row, NumberStyles.Float, CultureInfo.InvariantCulture, out double depth)
+                    && double.IsFinite(depth)
+                    && depth >= 0)
+                {
+                    validReadings.Add(depth);
+                }
             }
 
-            readings = dataRows;
+            if (validReadings.Count == 0)
+            {
+                throw new InvalidDataException("The snow-depth CSV contains no usable readings.");
+            }
+
+            readings = validReadings;
             loadedPath = fullPath;
             nextReadingIndex = 0;
         }
 
-        double depth = double.Parse(readings[nextReadingIndex], CultureInfo.InvariantCulture);
-        nextReadingIndex = (nextReadingIndex + 1) % readings.Length;
-        return depth;
+        double nextReading = readings[nextReadingIndex];
+        nextReadingIndex = (nextReadingIndex + 1) % readings.Count;
+        return nextReading;
     }
 }
