@@ -34,8 +34,17 @@ public abstract class CsvWeatherSensor : ISensor
     {
         source = null;
         LastValidReading = null;
-        source = new LoopedCsvDataSource(csvPath, CsvColumns);
-        Status = DeviceStatus.Online;
+        try
+        {
+            source = new LoopedCsvDataSource(csvPath, CsvColumns);
+            Status = DeviceStatus.Online;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            // missing file / wrong header etc - flag it instead of crashing the app
+            Status = DeviceStatus.Fault;
+            ReportEvent($"Cannot load simulation data: {ex.Message}");
+        }
     }
 
     public TelemetryPacket ReadTelemetry()
@@ -54,7 +63,11 @@ public abstract class CsvWeatherSensor : ISensor
             }
             ReportEvent("Skipped an invalid simulation row.");
         }
-        throw new InvalidDataException("The simulation file has no valid rows.");
+        // nothing usable in the whole file - go to Fault, and hand back the last good
+        // reading (marked Fault) if we ever had one so the HMI still has something to show
+        Status = DeviceStatus.Fault;
+        if (LastValidReading is { } last) return last with { Quality = TelemetryQuality.Fault };
+        return CreatePacket(new Dictionary<string, TelemetryValue>(), TelemetryQuality.Fault);
     }
 
     public void Shutdown()
