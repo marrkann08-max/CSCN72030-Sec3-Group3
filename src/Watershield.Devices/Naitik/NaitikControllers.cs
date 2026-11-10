@@ -77,7 +77,7 @@ public abstract class CsvController<TState> : IActuator where TState : class
 
             if (commandedState is { } commanded && ReturnCompleted(commanded, baseline))
             {
-                commandedState = null;
+                commandedState = baseline;
             }
 
             currentState = commandedState ?? baseline;
