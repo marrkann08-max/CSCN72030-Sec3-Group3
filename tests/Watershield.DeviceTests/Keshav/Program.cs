@@ -4,19 +4,25 @@ string csvPath = Path.GetTempFileName();
 
 try
 {
-    File.WriteAllLines(csvPath, ["snow_depth_cm", "12.4"]);
+    File.WriteAllLines(csvPath, ["snow_depth_cm", "12.4", "8.1"]);
 
     var sensor = new SnowDepthSensor();
-    double actual = sensor.ReadSnowDepthCm(csvPath);
-    const double expected = 12.4;
+    double[] expectedReadings = [12.4, 8.1, 12.4];
 
-    if (actual != expected)
+    for (int index = 0; index < expectedReadings.Length; index++)
     {
-        Console.Error.WriteLine($"FAIL: Expected {expected} cm, got {actual} cm.");
-        return 1;
+        double actual = sensor.ReadSnowDepthCm(csvPath);
+        double expected = expectedReadings[index];
+
+        if (actual != expected)
+        {
+            Console.Error.WriteLine(FormattableString.Invariant(
+                $"FAIL on poll {index + 1}: Expected {expected} cm, got {actual} cm."));
+            return 1;
+        }
     }
 
-    Console.WriteLine($"PASS: Read {actual} cm from the first data row.");
+    Console.WriteLine("PASS: Read both data rows and looped back to the first.");
     return 0;
 }
 finally
