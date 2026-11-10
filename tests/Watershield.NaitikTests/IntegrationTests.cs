@@ -62,8 +62,8 @@ public sealed class IntegrationTests
 }
 internal sealed class IntegrationHarness(IDevice[] devices)
 {
-    public void Initialize() { }
-    public TelemetryPacket[] Poll() => throw new NotImplementedException();
-    public CommandResult Execute(ControlCommand command) => throw new NotImplementedException();
-    public void Shutdown() { }
+    public void Initialize() { foreach (var device in devices) device.Initialize(); }
+    public TelemetryPacket[] Poll() => devices.OfType<ISensor>().Select(device => device.ReadTelemetry()).ToArray();
+    public CommandResult Execute(ControlCommand command) => devices.OfType<IActuator>().Single(device => device.DeviceId == command.TargetDeviceId).Execute(command);
+    public void Shutdown() { foreach (var device in devices) device.Shutdown(); }
 }
