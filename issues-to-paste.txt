@@ -1,0 +1,112 @@
+=====================================================================
+LABELS  (GitHub > Issues > Labels > New label)
+=====================================================================
+sprint-1        #2A6FB0   Sprint 1: device objects
+device          #2F9BB8   Device object work
+tdd             #E8741A   Built test-first
+testing         #6B7C93   Tests
+data            #1F4E79   Simulation data files
+documentation   #2E8B57   Docs
+
+(note: GitHub creates a "documentation" label by default - just edit its colour/description instead of making a new one)
+
+=====================================================================
+MILESTONE  (GitHub > Issues > Milestones > New milestone)
+=====================================================================
+Title:        Sprint 1 - Device Objects
+Due date:     2026-11-06
+Description:  All 13 device objects read looped CSV data and are unit tested.
+
+=====================================================================
+ISSUES  (assignee: me, milestone: Sprint 1 - Device Objects)
+=====================================================================
+
+---------------------------------------------------------------------
+Title:   T16: Design temperature sensors, weather station and CSV format
+Labels:  sprint-1, device, documentation
+Body:
+Design the three devices and the CSV format they read.
+
+Telemetry keys:
+- road_temperature (°C)
+- surface_temperature (°C)
+- air_temperature (°C)
+- wind_speed (km/h)
+- precipitation (text)
+
+Allowed precipitation values: none, rain, snow, freezing rain
+
+Documented in src/Watershield.Devices/Muhammad/README.md
+
+---------------------------------------------------------------------
+Title:   T17a: RoadTemperatureSensor (TDD)
+Labels:  sprint-1, device, tdd
+Body:
+- [ ] Failing test first
+- [ ] Accepts negative temperatures
+- [ ] Skips bad rows (raises an event)
+- [ ] Loops back to the first row at the end of the file
+
+---------------------------------------------------------------------
+Title:   T17b: SurfaceTemperatureSensor (TDD)
+Labels:  sprint-1, device, tdd
+Body:
+- [ ] Failing test first
+- [ ] Rejects NaN rows
+- [ ] Loops back to the first row at the end of the file
+
+---------------------------------------------------------------------
+Title:   T17c: WeatherStation (TDD)
+Labels:  sprint-1, device, tdd
+Body:
+- [ ] Failing test first
+- [ ] Reports air temperature, wind speed and precipitation
+- [ ] Rejects negative wind speed
+- [ ] Rejects unknown precipitation values
+
+---------------------------------------------------------------------
+Title:   T17d: Scenario data files
+Labels:  sprint-1, data
+Body:
+- [ ] road-temperature.csv, surface-temperature.csv, weather-station.csv
+- [ ] In all three scenarios: light-snow, heavy-snow, freezing-rain
+- [ ] 60 rows per file, same headers in every scenario
+
+---------------------------------------------------------------------
+Title:   T18: Fault handling tests for temperature and weather devices
+Labels:  sprint-1, testing, tdd
+Body:
+- [ ] All rows invalid -> Status Fault and Quality Fault
+- [ ] Wrong CSV header -> Status Fault after Initialize()
+
+=====================================================================
+PULL REQUEST  (hassnain/sprint1-tdd -> main)
+=====================================================================
+Title:
+Sprint 1: temperature sensors and weather station (T16-T18, TDD)
+
+Body:
+Adds my three Sprint 1 devices: RoadTemperatureSensor, SurfaceTemperatureSensor and WeatherStation. They share a CsvWeatherSensor base class that reads the looped scenario CSVs.
+
+Each device was done test-first. There's a failing test commit, then the commit that makes it pass, so you can see the red/green steps in the history:
+
+- chore(sprint1): bring in shared contracts and CSV source, add my test project
+- test(road-temp): add failing test for RoadTemperatureSensor
+- feat(road-temp): implement RoadTemperatureSensor on shared CSV base class
+- test(surface-temp): add failing test for SurfaceTemperatureSensor
+- feat(surface-temp): implement SurfaceTemperatureSensor
+- test(weather): add failing test for WeatherStation
+- feat(weather): implement WeatherStation
+- test(fault): add failing tests for all-invalid data and wrong CSV header
+- feat(fault): report Fault status and quality instead of throwing
+- test(data): add failing test that loads the real scenario files
+- feat(data): add road, surface and weather csvs for all three scenarios
+- docs(muhammad): document telemetry keys, CSV headers and allowed values
+
+Notes:
+- DeviceContracts.cs and LoopedCsvDataSource.cs are copied as-is from Naitik's branch, so they'll be identical when both get merged.
+- My tests are in their own xUnit project (tests/Watershield.MuhammadTests), set up the same way as Naitik's. Run them with: dotnet test tests/Watershield.MuhammadTests
+- WATERSHIELD.sln gets one new project entry. If Naitik's PR goes in first, that file might conflict, but it's just keeping both entries.
+- 14 tests, all passing. Release build is clean.
+
+Closes #1, closes #2, closes #3, closes #4, closes #5, closes #6
