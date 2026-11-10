@@ -26,6 +26,7 @@ try
         File.Delete(invalidPath);
     }
 
+    SnowplowBladeControllerChecks.Run();
     return 0;
 }
 catch (Exception exception)
