@@ -88,3 +88,20 @@ public sealed class RoadTemperatureSensor : CsvWeatherSensor
             ? null
             : new() { ["road_temperature"] = new(t, "°C") };
 }
+
+public sealed class SurfaceTemperatureSensor : ISensor
+{
+    public SurfaceTemperatureSensor(string deviceId, string segmentId, string csvPath, TimeProvider? clock = null)
+    {
+        DeviceId = deviceId;
+    }
+
+    public string DeviceId { get; }
+    public string Name => "Surface temperature sensor";
+    public DeviceStatus Status => DeviceStatus.Offline;
+    public event Action<DeviceEvent>? EventRaised;
+
+    public void Initialize() { }
+    public TelemetryPacket ReadTelemetry() => throw new NotImplementedException();
+    public void Shutdown() { }
+}
