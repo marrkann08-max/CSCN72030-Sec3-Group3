@@ -1,0 +1,9 @@
+.vs/
+**/bin/
+**/obj/
+*.user
+*.suo
+TestResults/
+*.db
+*.db-shm
+*.db-wal
