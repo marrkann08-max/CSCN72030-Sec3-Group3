@@ -103,19 +103,29 @@ public sealed class SurfaceTemperatureSensor : CsvWeatherSensor
             : new() { ["surface_temperature"] = new(t, "°C") };
 }
 
-public sealed class WeatherStation : ISensor
+public sealed class WeatherStation : CsvWeatherSensor
 {
     public WeatherStation(string deviceId, string segmentId, string csvPath, TimeProvider? clock = null)
+        : base(deviceId, segmentId, csvPath, clock) { }
+
+    public override string Name => "Weather station";
+    protected override string[] CsvColumns => ["air_temperature_c", "wind_speed_kmh", "precipitation"];
+
+    protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields)
     {
-        DeviceId = deviceId;
+        // wind can't be negative, so treat that as a broken reading
+        if (fields.Length != 3 || !TryNumber(fields[0], out double air) || !TryNumber(fields[1], out double wind) || wind < 0)
+            return null;
+
+        string precip = fields[2].ToLowerInvariant();
+        if (precip is not ("none" or "rain" or "snow" or "freezing rain"))
+            return null;
+
+        return new()
+        {
+            ["air_temperature"] = new(air, "°C"),
+            ["wind_speed"] = new(wind, "km/h"),
+            ["precipitation"] = new(precip, ""),
+        };
     }
-
-    public string DeviceId { get; }
-    public string Name => "Weather station";
-    public DeviceStatus Status => DeviceStatus.Offline;
-    public event Action<DeviceEvent>? EventRaised;
-
-    public void Initialize() { }
-    public TelemetryPacket ReadTelemetry() => throw new NotImplementedException();
-    public void Shutdown() { }
 }
