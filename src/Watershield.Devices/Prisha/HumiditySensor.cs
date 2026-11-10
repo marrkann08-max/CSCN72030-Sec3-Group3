@@ -20,7 +20,9 @@ public sealed class HumiditySensor : CsvWeatherSensor
 
     protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields)
     {
-        if (fields.Length != 1 || !TryNumber(fields[0], out double humidity))
+        if (fields.Length != 1 ||
+            !TryNumber(fields[0], out double humidity) ||
+            humidity is < 0 or > 100)
         {
             return null;
         }
