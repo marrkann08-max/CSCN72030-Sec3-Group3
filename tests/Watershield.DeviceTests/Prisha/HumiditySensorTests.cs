@@ -55,4 +55,32 @@ public sealed class HumiditySensorTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(100)]
+    public void AcceptsHumidityAtRangeBoundary(int percent)
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath,
+                ["relative_humidity_percent", percent.ToString()]);
+
+            var sensor = new HumiditySensor("HUM-01", "R1", csvPath);
+            sensor.Initialize();
+
+            TelemetryPacket reading = sensor.ReadTelemetry();
+
+            Assert.AreEqual(TelemetryQuality.Ok, reading.Quality);
+            Assert.AreEqual(
+                (double)percent,
+                (double)reading.Values["relative_humidity"].Value);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
