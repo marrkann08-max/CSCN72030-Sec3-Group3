@@ -64,4 +64,31 @@ public sealed class VehicleTelemetryModuleTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void SkipsVehicleTelemetryWithLongitudeAboveOneHundredEighty()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath,
+            [
+                "vehicle_id,latitude,longitude,speed_kmh,vehicle_status",
+            "PLOW-04,43.45,181,24,DISPATCHED",
+            "PLOW-04,43.45,-80.49,24,DISPATCHED"
+            ]);
+
+            var sensor = new VehicleTelemetryModule("GPS-01", "R1", csvPath);
+            sensor.Initialize();
+
+            TelemetryPacket reading = sensor.ReadTelemetry();
+
+            Assert.AreEqual(-80.49d, (double)reading.Values["longitude"].Value);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
