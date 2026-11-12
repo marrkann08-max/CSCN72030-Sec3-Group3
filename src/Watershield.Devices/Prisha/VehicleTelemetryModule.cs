@@ -22,9 +22,10 @@ public sealed class VehicleTelemetryModule : CsvWeatherSensor
     protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields)
     {
         if (fields.Length != 5 ||
-            !TryNumber(fields[1], out double latitude) ||
-            !TryNumber(fields[2], out double longitude) ||
-            !TryNumber(fields[3], out double speed))
+    !TryNumber(fields[1], out double latitude) ||
+    latitude is < -90 or > 90 ||
+    !TryNumber(fields[2], out double longitude) ||
+    !TryNumber(fields[3], out double speed))
         {
             return null;
         }
