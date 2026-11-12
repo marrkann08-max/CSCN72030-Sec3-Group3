@@ -172,4 +172,36 @@ public sealed class VehicleTelemetryModuleTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void NormalizesVehicleStatusAndLoopsBackToFirstRow()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath,
+            [
+                "vehicle_id,latitude,longitude,speed_kmh,vehicle_status",
+            "PLOW-04,43.45,-80.49,24,dispatched",
+            "PLOW-04,43.46,-80.50,0,available"
+            ]);
+
+            var sensor = new VehicleTelemetryModule("GPS-01", "R1", csvPath);
+            sensor.Initialize();
+
+            var first = sensor.ReadTelemetry();
+            var second = sensor.ReadTelemetry();
+            var wrapped = sensor.ReadTelemetry();
+
+            Assert.AreEqual("DISPATCHED", (string)first.Values["vehicle_status"].Value);
+            Assert.AreEqual("AVAILABLE", (string)second.Values["vehicle_status"].Value);
+            Assert.AreEqual(0d, (double)second.Values["speed"].Value);
+            Assert.AreEqual("DISPATCHED", (string)wrapped.Values["vehicle_status"].Value);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
