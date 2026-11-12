@@ -26,7 +26,8 @@ public sealed class VehicleTelemetryModule : CsvWeatherSensor
     latitude is < -90 or > 90 ||
     !TryNumber(fields[2], out double longitude) ||
     longitude is < -180 or > 180 ||
-    !TryNumber(fields[3], out double speed))
+    !TryNumber(fields[3], out double speed) ||
+    speed < 0)
         {
             return null;
         }
