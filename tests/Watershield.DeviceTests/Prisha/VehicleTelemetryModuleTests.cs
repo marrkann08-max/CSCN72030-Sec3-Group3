@@ -145,4 +145,31 @@ public sealed class VehicleTelemetryModuleTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void SkipsVehicleTelemetryWithUnsupportedStatus()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath,
+            [
+                "vehicle_id,latitude,longitude,speed_kmh,vehicle_status",
+            "PLOW-04,43.45,-80.49,24,UNKNOWN",
+            "PLOW-04,43.45,-80.49,24,DISPATCHED"
+            ]);
+
+            var sensor = new VehicleTelemetryModule("GPS-01", "R1", csvPath);
+            sensor.Initialize();
+
+            TelemetryPacket reading = sensor.ReadTelemetry();
+
+            Assert.AreEqual("DISPATCHED", (string)reading.Values["vehicle_status"].Value);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
