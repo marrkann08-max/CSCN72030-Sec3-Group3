@@ -22,13 +22,20 @@ public sealed class VehicleTelemetryModule : CsvWeatherSensor
     protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields)
     {
         if (fields.Length != 5 ||
-    string.IsNullOrWhiteSpace(fields[0]) ||
-    !TryNumber(fields[1], out double latitude) ||
-    latitude is < -90 or > 90 ||
-    !TryNumber(fields[2], out double longitude) ||
-    longitude is < -180 or > 180 ||
-    !TryNumber(fields[3], out double speed) ||
-    speed < 0)
+            string.IsNullOrWhiteSpace(fields[0]) ||
+            !TryNumber(fields[1], out double latitude) ||
+            latitude is < -90 or > 90 ||
+            !TryNumber(fields[2], out double longitude) ||
+            longitude is < -180 or > 180 ||
+            !TryNumber(fields[3], out double speed) ||
+            speed < 0)
+        {
+            return null;
+        }
+
+        string status = fields[4].ToUpperInvariant();
+
+        if (status is not ("AVAILABLE" or "DISPATCHED" or "RETURNING" or "OUT OF SERVICE"))
         {
             return null;
         }
@@ -39,7 +46,7 @@ public sealed class VehicleTelemetryModule : CsvWeatherSensor
             ["latitude"] = new(latitude, "°"),
             ["longitude"] = new(longitude, "°"),
             ["speed"] = new(speed, "km/h"),
-            ["vehicle_status"] = new(fields[4], "")
+            ["vehicle_status"] = new(status, "")
         };
     }
 }
