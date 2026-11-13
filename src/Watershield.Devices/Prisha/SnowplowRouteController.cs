@@ -30,6 +30,18 @@ public sealed class SnowplowRouteController
         source = new LoopedCsvDataSource(csvPath, "route_id");
     }
 
+    public void ResetScenario()
+    {
+        if (source is null)
+        {
+            throw new InvalidOperationException("Initialize before resetting the scenario.");
+        }
+
+        source.Reset();
+        AssignedRoute = null;
+    }
+
+
     public TelemetryPacket ReadTelemetry()
     {
         if (source is null)
