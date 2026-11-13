@@ -38,6 +38,7 @@ public sealed class SnowplowRouteController
         if (!initialized ||
     command.TargetDeviceId != DeviceId ||
     command.Action != "AssignRoute" ||
+    command.CommandId == Guid.Empty ||
     string.IsNullOrWhiteSpace(command.IssuedBy) ||
     route is null ||
     !allowedRoutes.Contains(route))
