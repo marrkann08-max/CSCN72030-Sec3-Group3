@@ -30,6 +30,12 @@ public sealed class SnowplowRouteController
         source = new LoopedCsvDataSource(csvPath, "route_id");
     }
 
+    public void Shutdown()
+    {
+        source = null;
+        AssignedRoute = null;
+    }
+
     public void ResetScenario()
     {
         if (source is null)
