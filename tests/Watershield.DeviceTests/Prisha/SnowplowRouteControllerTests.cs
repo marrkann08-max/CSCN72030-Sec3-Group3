@@ -165,4 +165,27 @@ public sealed class SnowplowRouteControllerTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void ReportsFaultWhenCsvContainsNoAllowedRoute()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath, ["route_id", "R-99"]);
+
+            var controller = new SnowplowRouteController(
+                "PLOW-04", "R1", csvPath, ["R-01", "R-02"]);
+            controller.Initialize();
+
+            TelemetryPacket reading = controller.ReadTelemetry();
+
+            Assert.AreEqual(TelemetryQuality.Fault, reading.Quality);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
