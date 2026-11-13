@@ -36,10 +36,11 @@ public sealed class SnowplowRouteController
         string? route = command.Parameter;
 
         if (!initialized ||
-            command.TargetDeviceId != DeviceId ||
-            command.Action != "AssignRoute" ||
-            route is null ||
-            !allowedRoutes.Contains(route))
+    command.TargetDeviceId != DeviceId ||
+    command.Action != "AssignRoute" ||
+    string.IsNullOrWhiteSpace(command.IssuedBy) ||
+    route is null ||
+    !allowedRoutes.Contains(route))
         {
             return new CommandResult(
                 command.CommandId,
