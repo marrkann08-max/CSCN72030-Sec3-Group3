@@ -6,7 +6,7 @@ public sealed class SnowplowRouteController
 {
     private readonly string csvPath;
     private readonly HashSet<string> allowedRoutes;
-    private bool initialized;
+    private LoopedCsvDataSource? source;
 
     public SnowplowRouteController(
         string deviceId,
@@ -26,16 +26,36 @@ public sealed class SnowplowRouteController
 
     public void Initialize()
     {
-        initialized = false;
-        _ = new LoopedCsvDataSource(csvPath, "route_id");
-        initialized = true;
+        source = null;
+        source = new LoopedCsvDataSource(csvPath, "route_id");
     }
 
+    public TelemetryPacket ReadTelemetry()
+    {
+        if (source is null)
+        {
+            throw new InvalidOperationException("Initialize before reading route telemetry.");
+        }
+
+        string[] fields = source.Next();
+        string route = AssignedRoute ?? fields[0];
+
+        return new TelemetryPacket(
+            DeviceId,
+            nameof(SnowplowRouteController),
+            SegmentId,
+            DateTimeOffset.UtcNow,
+            new Dictionary<string, TelemetryValue>
+            {
+                ["route_id"] = new(route, "")
+            },
+            TelemetryQuality.Ok);
+    }
     public CommandResult Execute(ControlCommand command)
     {
         string? route = command.Parameter;
 
-        if (!initialized ||
+        if (source is null ||
     command.TargetDeviceId != DeviceId ||
     command.Action != "AssignRoute" ||
     command.CommandId == Guid.Empty ||
