@@ -49,19 +49,36 @@ public sealed class SnowplowRouteController
             throw new InvalidOperationException("Initialize before reading route telemetry.");
         }
 
-        string[] fields = source.Next();
-        string route = AssignedRoute ?? fields[0];
+        for (int row = 0; row < source.Count; row++)
+        {
+            string[] fields = source.Next();
+
+            if (fields.Length != 1 || !allowedRoutes.Contains(fields[0]))
+            {
+                continue;
+            }
+
+            string route = AssignedRoute ?? fields[0];
+
+            return new TelemetryPacket(
+                DeviceId,
+                nameof(SnowplowRouteController),
+                SegmentId,
+                DateTimeOffset.UtcNow,
+                new Dictionary<string, TelemetryValue>
+                {
+                    ["route_id"] = new(route, "")
+                },
+                TelemetryQuality.Ok);
+        }
 
         return new TelemetryPacket(
             DeviceId,
             nameof(SnowplowRouteController),
             SegmentId,
             DateTimeOffset.UtcNow,
-            new Dictionary<string, TelemetryValue>
-            {
-                ["route_id"] = new(route, "")
-            },
-            TelemetryQuality.Ok);
+            new Dictionary<string, TelemetryValue>(),
+            TelemetryQuality.Fault);
     }
     public CommandResult Execute(ControlCommand command)
     {
