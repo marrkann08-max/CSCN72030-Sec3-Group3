@@ -1,0 +1,4 @@
+vehicle_id,latitude,longitude,speed_kmh,vehicle_status
+PLOW-04,43.4516,-80.4925,0,AVAILABLE
+PLOW-04,43.4520,-80.4919,24,DISPATCHED
+PLOW-04,43.4525,-80.4912,32,DISPATCHED
