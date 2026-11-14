@@ -2,7 +2,7 @@
 
 namespace Watershield.Devices.Prisha;
 
-public sealed class SnowplowRouteController
+public sealed class SnowplowRouteController : IActuator
 {
     private readonly string csvPath;
     private readonly HashSet<string> allowedRoutes;
@@ -22,18 +22,26 @@ public sealed class SnowplowRouteController
 
     public string DeviceId { get; }
     public string SegmentId { get; }
+    public string Name => "Snowplow route controller";
     public string? AssignedRoute { get; private set; }
+    public DeviceStatus Status { get; private set; } = DeviceStatus.Offline;
+
+    public event Action<DeviceEvent>? EventRaised;
 
     public void Initialize()
     {
         source = null;
+        Status = DeviceStatus.Offline;
+
         source = new LoopedCsvDataSource(csvPath, "route_id");
+        Status = DeviceStatus.Online;
     }
 
     public void Shutdown()
     {
         source = null;
         AssignedRoute = null;
+        Status = DeviceStatus.Offline;
     }
 
     public void ResetScenario()
@@ -45,8 +53,8 @@ public sealed class SnowplowRouteController
 
         source.Reset();
         AssignedRoute = null;
+        Status = DeviceStatus.Online;
     }
-
 
     public TelemetryPacket ReadTelemetry()
     {
@@ -65,6 +73,7 @@ public sealed class SnowplowRouteController
             }
 
             string route = AssignedRoute ?? fields[0];
+            Status = DeviceStatus.Online;
 
             return new TelemetryPacket(
                 DeviceId,
@@ -78,6 +87,8 @@ public sealed class SnowplowRouteController
                 TelemetryQuality.Ok);
         }
 
+        Status = DeviceStatus.Fault;
+
         return new TelemetryPacket(
             DeviceId,
             nameof(SnowplowRouteController),
@@ -86,17 +97,18 @@ public sealed class SnowplowRouteController
             new Dictionary<string, TelemetryValue>(),
             TelemetryQuality.Fault);
     }
+
     public CommandResult Execute(ControlCommand command)
     {
         string? route = command.Parameter;
 
         if (source is null ||
-    command.TargetDeviceId != DeviceId ||
-    command.Action != "AssignRoute" ||
-    command.CommandId == Guid.Empty ||
-    string.IsNullOrWhiteSpace(command.IssuedBy) ||
-    route is null ||
-    !allowedRoutes.Contains(route))
+            command.TargetDeviceId != DeviceId ||
+            command.Action != "AssignRoute" ||
+            command.CommandId == Guid.Empty ||
+            string.IsNullOrWhiteSpace(command.IssuedBy) ||
+            route is null ||
+            !allowedRoutes.Contains(route))
         {
             return new CommandResult(
                 command.CommandId,
@@ -106,6 +118,8 @@ public sealed class SnowplowRouteController
         }
 
         AssignedRoute = route;
+        EventRaised?.Invoke(
+            new DeviceEvent(DeviceId, DateTimeOffset.UtcNow, $"Assigned route {route}."));
 
         return new CommandResult(
             command.CommandId,
