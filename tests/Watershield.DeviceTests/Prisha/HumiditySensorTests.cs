@@ -122,7 +122,7 @@ public sealed class HumiditySensorTests
         Assert.IsTrue(File.Exists(path), $"Missing scenario file: {path}");
 
         int rowCount = File.ReadAllLines(path).Length - 1;
-        Assert.IsTrue(rowCount > 0, $"{scenario} needs at least one data row.");
+        Assert.IsGreaterThan(0, rowCount, $"{scenario} needs at least one data row.");
 
         var sensor = new HumiditySensor("HUM-01", "R1", path);
         int eventsRaised = 0;
