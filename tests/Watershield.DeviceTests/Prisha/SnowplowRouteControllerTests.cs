@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Watershield.Core.Contracts;
 using Watershield.Devices.Prisha;
 
@@ -279,6 +279,33 @@ public sealed class SnowplowRouteControllerTests
             controller.Initialize();
 
             Assert.AreEqual(DeviceStatus.Fault, controller.Status);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
+
+    [TestMethod]
+    public void RejectsUnknownRouteAndPreservesTheCurrentAssignment()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath, ["route_id", "R-01"]);
+            var controller = new SnowplowRouteController(
+                "PLOW-04", "R1", csvPath, ["R-01", "R-02"]);
+            controller.Initialize();
+
+            var command = new ControlCommand(
+                Guid.NewGuid(), "PLOW-04", "AssignRoute", "R-02",
+                "Prisha", DateTimeOffset.UtcNow);
+            Assert.AreEqual(CommandOutcome.Success, controller.Execute(command).Outcome);
+
+            var unknown = command with { CommandId = Guid.NewGuid(), Parameter = "R-99" };
+            Assert.AreEqual(CommandOutcome.Rejected, controller.Execute(unknown).Outcome);
+            Assert.AreEqual("R-02", controller.AssignedRoute);
         }
         finally
         {
