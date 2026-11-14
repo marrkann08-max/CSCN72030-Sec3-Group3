@@ -234,4 +234,33 @@ public sealed class SnowplowRouteControllerTests
             typeof(IActuator).IsAssignableFrom(typeof(SnowplowRouteController)),
             "The route controller should implement the shared IActuator contract.");
     }
+
+    [TestMethod]
+    public void RejectsRouteAssignmentWhileFaulted()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath, ["route_id", "R-99"]);
+
+            var controller = new SnowplowRouteController(
+                "PLOW-04", "R1", csvPath, ["R-01", "R-02"]);
+            controller.Initialize();
+            controller.ReadTelemetry();
+
+            Assert.AreEqual(DeviceStatus.Fault, controller.Status);
+
+            var command = new ControlCommand(
+                Guid.NewGuid(), "PLOW-04", "AssignRoute", "R-02",
+                "Prisha", DateTimeOffset.UtcNow);
+
+            Assert.AreEqual(CommandOutcome.Rejected, controller.Execute(command).Outcome);
+            Assert.IsNull(controller.AssignedRoute);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
