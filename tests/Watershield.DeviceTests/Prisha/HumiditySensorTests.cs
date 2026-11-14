@@ -109,4 +109,34 @@ public sealed class HumiditySensorTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    [DataRow("light-snow")]
+    [DataRow("heavy-snow")]
+    [DataRow("freezing-rain")]
+    public void ReadsEveryHumidityRowInScenario(string scenario)
+    {
+        string path = Path.Combine(
+            AppContext.BaseDirectory, "scenarios", scenario, "humidity.csv");
+
+        Assert.IsTrue(File.Exists(path), $"Missing scenario file: {path}");
+
+        int rowCount = File.ReadAllLines(path).Length - 1;
+        Assert.IsTrue(rowCount > 0, $"{scenario} needs at least one data row.");
+
+        var sensor = new HumiditySensor("HUM-01", "R1", path);
+        int eventsRaised = 0;
+        sensor.EventRaised += _ => eventsRaised++;
+        sensor.Initialize();
+
+        for (int row = 0; row < rowCount; row++)
+        {
+            Assert.AreEqual(
+                TelemetryQuality.Ok,
+                sensor.ReadTelemetry().Quality,
+                $"{scenario}, data row {row + 1}");
+        }
+
+        Assert.AreEqual(0, eventsRaised, $"{scenario} should load without warnings.");
+    }
 }
