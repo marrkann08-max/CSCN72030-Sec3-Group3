@@ -263,4 +263,26 @@ public sealed class SnowplowRouteControllerTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void InitializeReportsFaultWhenRouteCsvHeaderIsWrong()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath, ["wrong_header", "R-01"]);
+
+            var controller = new SnowplowRouteController(
+                "PLOW-04", "R1", csvPath, ["R-01", "R-02"]);
+
+            controller.Initialize();
+
+            Assert.AreEqual(DeviceStatus.Fault, controller.Status);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
