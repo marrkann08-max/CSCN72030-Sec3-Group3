@@ -103,6 +103,7 @@ public sealed class SnowplowRouteController : IActuator
         string? route = command.Parameter;
 
         if (source is null ||
+            Status != DeviceStatus.Online ||
             command.TargetDeviceId != DeviceId ||
             command.Action != "AssignRoute" ||
             command.CommandId == Guid.Empty ||
