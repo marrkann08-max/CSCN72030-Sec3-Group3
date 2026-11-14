@@ -226,4 +226,12 @@ public sealed class SnowplowRouteControllerTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void RouteControllerImplementsSharedActuatorContract()
+    {
+        Assert.IsTrue(
+            typeof(IActuator).IsAssignableFrom(typeof(SnowplowRouteController)),
+            "The route controller should implement the shared IActuator contract.");
+    }
 }
