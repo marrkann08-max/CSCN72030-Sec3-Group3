@@ -1,4 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Watershield.Core.Contracts;
 using Watershield.Devices.Prisha;
 
@@ -122,7 +122,7 @@ public sealed class HumiditySensorTests
         Assert.IsTrue(File.Exists(path), $"Missing scenario file: {path}");
 
         int rowCount = File.ReadAllLines(path).Length - 1;
-        Assert.IsGreaterThan(0, rowCount, $"{scenario} needs at least one data row.");
+        Assert.AreEqual(50, rowCount, $"{scenario} must have 50 humidity readings.");
 
         var sensor = new HumiditySensor("HUM-01", "R1", path);
         int eventsRaised = 0;
