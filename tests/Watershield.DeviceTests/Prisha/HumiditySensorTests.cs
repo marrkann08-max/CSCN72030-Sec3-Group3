@@ -83,4 +83,30 @@ public sealed class HumiditySensorTests
             File.Delete(csvPath);
         }
     }
+
+    [TestMethod]
+    public void SkipsInvalidHumidityReportsEventAndLoops()
+    {
+        string csvPath = Path.GetTempFileName();
+
+        try
+        {
+            File.WriteAllLines(csvPath,
+                ["relative_humidity_percent", "82", "NaN", "93"]);
+
+            var sensor = new HumiditySensor("HUM-01", "R1", csvPath);
+            int eventsRaised = 0;
+            sensor.EventRaised += _ => eventsRaised++;
+            sensor.Initialize();
+
+            Assert.AreEqual(82d, (double)sensor.ReadTelemetry().Values["relative_humidity"].Value);
+            Assert.AreEqual(93d, (double)sensor.ReadTelemetry().Values["relative_humidity"].Value);
+            Assert.AreEqual(1, eventsRaised);
+            Assert.AreEqual(82d, (double)sensor.ReadTelemetry().Values["relative_humidity"].Value);
+        }
+        finally
+        {
+            File.Delete(csvPath);
+        }
+    }
 }
