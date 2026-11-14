@@ -33,8 +33,21 @@ public sealed class SnowplowRouteController : IActuator
         source = null;
         Status = DeviceStatus.Offline;
 
-        source = new LoopedCsvDataSource(csvPath, "route_id");
-        Status = DeviceStatus.Online;
+        try
+        {
+            source = new LoopedCsvDataSource(csvPath, "route_id");
+            Status = DeviceStatus.Online;
+        }
+        catch (Exception ex) when (
+            ex is InvalidDataException or IOException or UnauthorizedAccessException)
+        {
+            Status = DeviceStatus.Fault;
+            EventRaised?.Invoke(
+                new DeviceEvent(
+                    DeviceId,
+                    DateTimeOffset.UtcNow,
+                    $"Cannot load route data: {ex.Message}"));
+        }
     }
 
     public void Shutdown()
