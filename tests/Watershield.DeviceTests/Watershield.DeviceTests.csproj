@@ -20,8 +20,9 @@
 
 
 	<ItemGroup>
-		<None Include="../../data/scenarios/**/humidity.csv;../../data/scenarios/**/vehicle-telemetry.csv;../../data/scenarios/**/snowplow-route.csv"
+		<None Include="../../data/scenarios/**/humidity.csv;../../data/scenarios/**/vehicle-telemetry.csv;../../data/scenarios/**/snowplow-route.csv;../../data/scenarios/**/road-friction.csv;../../data/scenarios/**/road-condition.csv;../../data/scenarios/**/salt-spreader.csv"
 			  Link="scenarios/%(RecursiveDir)%(Filename)%(Extension)"
 			  CopyToOutputDirectory="PreserveNewest" />
 	</ItemGroup>
 </Project>
+
