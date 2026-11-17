@@ -1,0 +1,144 @@
+using System.Globalization;
+using Watershield.Core.Contracts;
+
+namespace Watershield.Devices.Muhammad;
+
+// base for my three sensors - they all just read a looped csv, so the loading/skipping
+// logic lives here and each sensor only says what its header is and how to parse a row
+public abstract class CsvWeatherSensor : ISensor
+{
+    private readonly string csvPath;
+    private readonly TimeProvider clock;
+    private LoopedCsvDataSource? source;
+
+    protected CsvWeatherSensor(string deviceId, string segmentId, string csvPath, TimeProvider? clock)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(deviceId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(segmentId);
+        ArgumentException.ThrowIfNullOrWhiteSpace(csvPath);
+        DeviceId = deviceId;
+        SegmentId = segmentId;
+        this.csvPath = csvPath;
+        this.clock = clock ?? TimeProvider.System;
+    }
+
+    public string DeviceId { get; }
+    public string SegmentId { get; }
+    public abstract string Name { get; }
+    public DeviceStatus Status { get; private set; } = DeviceStatus.Offline;
+    public TelemetryPacket? LastValidReading { get; private set; }
+    public event Action<DeviceEvent>? EventRaised;
+    protected abstract string[] CsvColumns { get; }
+
+    public void Initialize()
+    {
+        source = null;
+        LastValidReading = null;
+        try
+        {
+            source = new LoopedCsvDataSource(csvPath, CsvColumns);
+            Status = DeviceStatus.Online;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
+        {
+            // missing file / wrong header etc - flag it instead of crashing the app
+            Status = DeviceStatus.Fault;
+            ReportEvent($"Cannot load simulation data: {ex.Message}");
+        }
+    }
+
+    public TelemetryPacket ReadTelemetry()
+    {
+        if (source is null) throw new InvalidOperationException("Initialize a valid simulation file before polling.");
+        // only go around the file once, otherwise a file full of junk would spin forever
+        for (int row = 0; row < source.Count; row++)
+        {
+            var values = ParseRow(source.Next());
+            if (values is not null)
+            {
+                Status = DeviceStatus.Online;
+                var reading = CreatePacket(values, TelemetryQuality.Ok);
+                LastValidReading = reading;
+                return reading;
+            }
+            ReportEvent("Skipped an invalid simulation row.");
+        }
+        // nothing usable in the whole file - go to Fault, and hand back the last good
+        // reading (marked Fault) if we ever had one so the HMI still has something to show
+        Status = DeviceStatus.Fault;
+        if (LastValidReading is { } last) return last with { Quality = TelemetryQuality.Fault };
+        return CreatePacket(new Dictionary<string, TelemetryValue>(), TelemetryQuality.Fault);
+    }
+
+    public void Shutdown()
+    {
+        source = null;
+        Status = DeviceStatus.Offline;
+    }
+
+    protected abstract Dictionary<string, TelemetryValue>? ParseRow(string[] fields);
+
+    // invariant culture so "-8.4" parses the same on every machine, and NaN/Infinity count as bad
+    protected static bool TryNumber(string value, out double number) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out number) && double.IsFinite(number);
+
+    private TelemetryPacket CreatePacket(IReadOnlyDictionary<string, TelemetryValue> values, TelemetryQuality quality) =>
+        new(DeviceId, GetType().Name, SegmentId, clock.GetUtcNow(), values, quality);
+
+    private void ReportEvent(string message) => EventRaised?.Invoke(new DeviceEvent(DeviceId, clock.GetUtcNow(), message));
+}
+
+public sealed class RoadTemperatureSensor : CsvWeatherSensor
+{
+    public RoadTemperatureSensor(string deviceId, string segmentId, string csvPath, TimeProvider? clock = null)
+        : base(deviceId, segmentId, csvPath, clock) { }
+
+    public override string Name => "Road temperature sensor";
+    protected override string[] CsvColumns => ["road_temperature_c"];
+
+    protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields) =>
+        fields.Length != 1 || !TryNumber(fields[0], out double t)
+            ? null
+            : new() { ["road_temperature"] = new(t, "°C") };
+}
+
+public sealed class SurfaceTemperatureSensor : CsvWeatherSensor
+{
+    public SurfaceTemperatureSensor(string deviceId, string segmentId, string csvPath, TimeProvider? clock = null)
+        : base(deviceId, segmentId, csvPath, clock) { }
+
+    public override string Name => "Surface temperature sensor";
+    protected override string[] CsvColumns => ["surface_temperature_c"];
+
+    protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields) =>
+        fields.Length != 1 || !TryNumber(fields[0], out double t)
+            ? null
+            : new() { ["surface_temperature"] = new(t, "°C") };
+}
+
+public sealed class WeatherStation : CsvWeatherSensor
+{
+    public WeatherStation(string deviceId, string segmentId, string csvPath, TimeProvider? clock = null)
+        : base(deviceId, segmentId, csvPath, clock) { }
+
+    public override string Name => "Weather station";
+    protected override string[] CsvColumns => ["air_temperature_c", "wind_speed_kmh", "precipitation"];
+
+    protected override Dictionary<string, TelemetryValue>? ParseRow(string[] fields)
+    {
+        // wind can't be negative, so treat that as a broken reading
+        if (fields.Length != 3 || !TryNumber(fields[0], out double air) || !TryNumber(fields[1], out double wind) || wind < 0)
+            return null;
+
+        string precip = fields[2].ToLowerInvariant();
+        if (precip is not ("none" or "rain" or "snow" or "freezing rain"))
+            return null;
+
+        return new()
+        {
+            ["air_temperature"] = new(air, "°C"),
+            ["wind_speed"] = new(wind, "km/h"),
+            ["precipitation"] = new(precip, ""),
+        };
+    }
+}

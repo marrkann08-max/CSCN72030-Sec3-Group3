@@ -1,13 +1,28 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.0.1" />
+    <PackageReference Include="MSTest.TestAdapter" Version="4.0.2" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Watershield.Devices\Watershield.Devices.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+
+	<ItemGroup>
+		<None Include="../../data/scenarios/**/humidity.csv;../../data/scenarios/**/vehicle-telemetry.csv;../../data/scenarios/**/snowplow-route.csv;../../data/scenarios/**/road-friction.csv;../../data/scenarios/**/road-condition.csv;../../data/scenarios/**/salt-spreader.csv"
+			  Link="scenarios/%(RecursiveDir)%(Filename)%(Extension)"
+			  CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 </Project>
+
